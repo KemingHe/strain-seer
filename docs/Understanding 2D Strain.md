@@ -10,7 +10,7 @@
 
 Let me first address the labeling confusion:
 
-```
+```text
     0 ------- 1
     |         |
     |    4    |
