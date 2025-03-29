@@ -138,14 +138,22 @@ if st.session_state.files_data:
                     f.write(uploaded_file.getvalue())
                 break
         
+        # Get image dimensions
+        with Image.open(temp_path) as img:
+            width, height = img.size
+            # Calculate dimensions maintaining aspect ratio with minimum size of 512
+            scale = max(512 / width, 512 / height)
+            display_width = int(width * scale)
+            display_height = int(height * scale)
+        
         # Point detection annotation
         points = pointdet(
             temp_path,
             label_list=label_list,
             points=[[p['point'][0], p['point'][1]] for p in file_data['points']],
             labels=[0 if p['label'] == 'Fiducial' else 1 for p in file_data['points']],
-            height=512,
-            width=512,
+            height=display_height,
+            width=display_width,
             point_width=3,
             use_space=True
         )
