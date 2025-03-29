@@ -5,6 +5,8 @@ import io
 import os
 import pandas as pd
 from pathlib import Path
+import uuid
+from typing import Dict, List, TypedDict, Optional
 
 # Set page config with favicon
 st.set_page_config(
@@ -13,11 +15,23 @@ st.set_page_config(
     layout="wide"
 )
 
+# Type definitions
+class Point(TypedDict):
+    point: List[float]
+    label: str
+    label_id: int
+
+class FileData(TypedDict):
+    id: str
+    filename: str
+    order: int
+    points: List[Point]
+    status: tuple[bool, str]
+
 # Initialize session state for files data
 if 'files_data' not in st.session_state:
+    # type: Dict[str, FileData]
     st.session_state.files_data = {}
-if 'selected_file' not in st.session_state:
-    st.session_state.selected_file = None
 
 # Title and description
 st.title("Point Annotation Tool")
@@ -39,7 +53,7 @@ This tool allows you to annotate points on multiple images:
 # Define label list with colors
 label_list = ['Fiducial', 'Scale']
 
-def validate_annotation(points):
+def validate_annotation(points: List[Point]) -> tuple[bool, str]:
     """Validate if annotation meets requirements."""
     if not points:
         return False, "Missing"
@@ -51,10 +65,13 @@ def validate_annotation(points):
         return False, "Incomplete"
     return True, "Complete"
 
-def save_annotation(file_name, points):
+def save_annotation(file_id: str, filename: str, order: int, points: Optional[List[Point]] = None) -> None:
     """Save annotation data to session state."""
-    st.session_state.files_data[file_name] = {
-        'points': points or [],  # Ensure points is never None
+    st.session_state.files_data[file_id] = {
+        'id': file_id,
+        'filename': filename,
+        'order': order,
+        'points': points or [],
         'status': validate_annotation(points or [])
     }
 
@@ -66,20 +83,26 @@ uploaded_files = st.file_uploader(
 )
 
 # Save uploaded files and initialize their data
-for uploaded_file in uploaded_files:
-    if uploaded_file.name not in st.session_state.files_data:
-        save_annotation(uploaded_file.name, [])
+for i, uploaded_file in enumerate(uploaded_files):
+    # Check if file exists in our data
+    file_exists = any(data['filename'] == uploaded_file.name for data in st.session_state.files_data.values())
+    if not file_exists:
+        file_id = str(uuid.uuid4())
+        save_annotation(file_id, uploaded_file.name, i)
 
 # Display files table with status
 if st.session_state.files_data:
+    # Sort files by order
+    sorted_files = sorted(st.session_state.files_data.values(), key=lambda x: x['order'])
+    
     files_df = pd.DataFrame([
         {
-            'File': name,
+            'File': data['filename'],
             'Status': data['status'][1],
-            'Fiducial Points': sum(1 for p in data.get('points', []) if p.get('label') == 'Fiducial'),
-            'Scale Points': sum(1 for p in data.get('points', []) if p.get('label') == 'Scale')
+            'Fiducial Points': sum(1 for p in data['points'] if p['label'] == 'Fiducial'),
+            'Scale Points': sum(1 for p in data['points'] if p['label'] == 'Scale')
         }
-        for name, data in st.session_state.files_data.items()
+        for data in sorted_files
     ])
     
     # Color coding for status
@@ -98,18 +121,19 @@ if st.session_state.files_data:
     
     # File selection
     st.markdown("### Select File to Annotate")
-    selected_file = st.selectbox(
+    selected_filename = st.selectbox(
         "Choose a file to annotate",
-        options=list(st.session_state.files_data.keys())
+        options=[data['filename'] for data in sorted_files]
     )
     
-    if selected_file:
-        file_data = st.session_state.files_data[selected_file]
+    if selected_filename:
+        # Find the file data by filename
+        file_data = next(data for data in st.session_state.files_data.values() if data['filename'] == selected_filename)
         
         # Save the image temporarily
         temp_path = "temp_image.jpg"
         for uploaded_file in uploaded_files:
-            if uploaded_file.name == selected_file:
+            if uploaded_file.name == selected_filename:
                 with open(temp_path, "wb") as f:
                     f.write(uploaded_file.getvalue())
                 break
@@ -128,10 +152,10 @@ if st.session_state.files_data:
         
         # Save new annotation
         if points:  # Only update if we got new points
-            save_annotation(selected_file, points)
+            save_annotation(file_data['id'], file_data['filename'], file_data['order'], points)
         
         # Display current annotation table
-        if file_data['points']:  # Use file_data instead of points
+        if file_data['points']:
             df_data = []
             for i, point in enumerate(file_data['points']):
                 df_data.append({
