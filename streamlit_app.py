@@ -1,94 +1,162 @@
 import streamlit as st
-from langchain_core.messages import HumanMessage, AIMessage
+from streamlit_image_annotation import pointdet
+from PIL import Image
+import io
+import os
+import pandas as pd
+from pathlib import Path
 
-from llms.openai import openai_lite_model, openai_regular_model
-from components.chat_ui import init_chat_history, is_valid_query
-from chains.types import ChainInputs, ChainConfig
-from chains.web_search import (
-    get_simple_chain_response_stream,
-    get_single_web_search_chain_response_stream,
-    get_multi_web_search_chain_response_stream,
-)
-from components.page_ui import setup_page
-
-setup_page(
-    app_layout="wide",
-    page_title="Chat Comparison",
-    page_description="This page demonstrates the difference between a basic chatbot, a single-task web search chatbot, and a multi-task web search chatbot.",
+# Set page config with favicon
+st.set_page_config(
+    page_title="Point Annotation Tool",
+    page_icon="📍",
+    layout="wide"
 )
 
-init_chat_history("simple_chat_history")
-simple_chat_history = st.session_state.simple_chat_history
+# Initialize session state for files data
+if 'files_data' not in st.session_state:
+    st.session_state.files_data = {}
+if 'selected_file' not in st.session_state:
+    st.session_state.selected_file = None
 
-init_chat_history("single_web_search_chat_history")
-single_web_search_chat_history = st.session_state.single_web_search_chat_history
+# Title and description
+st.title("Point Annotation Tool")
+st.markdown("""
+This tool allows you to annotate points on multiple images:
+- **Click**: Add/Remove points
+- **Fiducial Points** (Red): Used for reference points (5 required)
+- **Scale Points** (Green): Used for scale measurement (2 required)
 
-init_chat_history("multi_web_search_chat_history")
-multi_web_search_chat_history = st.session_state.multi_web_search_chat_history
+### Instructions:
+1. Upload your image files
+2. Select a file from the list below
+3. Annotate the required points:
+   - 5 Fiducial points (red)
+   - 2 Scale points (green)
+4. The status will update automatically
+""")
 
-# Configure the chain
-config = ChainConfig(
-    orchestrator_llm=openai_regular_model,
-    summarizer_llm=openai_lite_model,
-    track_metrics=True,
+# Define label list with colors
+label_list = ['Fiducial', 'Scale']
+
+def validate_annotation(points):
+    """Validate if annotation meets requirements."""
+    if not points:
+        return False, "Missing"
+    
+    fiducial_count = sum(1 for p in points if p['label'] == 'Fiducial')
+    scale_count = sum(1 for p in points if p['label'] == 'Scale')
+    
+    if fiducial_count != 5 or scale_count != 2:
+        return False, "Incomplete"
+    return True, "Complete"
+
+def save_annotation(file_name, points):
+    """Save annotation data to session state."""
+    st.session_state.files_data[file_name] = {
+        'points': points or [],  # Ensure points is never None
+        'status': validate_annotation(points or [])
+    }
+
+# File uploader
+uploaded_files = st.file_uploader(
+    "Choose image files", 
+    type=['png', 'jpg', 'jpeg', 'gif', 'bmp'],
+    accept_multiple_files=True
 )
 
-demo_container = st.container()
-with demo_container:
-    user_query = st.chat_input("I have a question about...")
-    if is_valid_query(user_query):
-        # Add user message to chat histories
-        simple_chat_history.append(HumanMessage(user_query))
-        single_web_search_chat_history.append(HumanMessage(user_query))
-        multi_web_search_chat_history.append(HumanMessage(user_query))
+# Save uploaded files and initialize their data
+for uploaded_file in uploaded_files:
+    if uploaded_file.name not in st.session_state.files_data:
+        save_annotation(uploaded_file.name, [])
 
-        # Create columns for displaying streaming responses
-        simple_res_col, single_web_res_col, multi_web_res_col = st.columns(3)
+# Display files table with status
+if st.session_state.files_data:
+    files_df = pd.DataFrame([
+        {
+            'File': name,
+            'Status': data['status'][1],
+            'Fiducial Points': sum(1 for p in data.get('points', []) if p.get('label') == 'Fiducial'),
+            'Scale Points': sum(1 for p in data.get('points', []) if p.get('label') == 'Scale')
+        }
+        for name, data in st.session_state.files_data.items()
+    ])
+    
+    # Color coding for status
+    def color_status(val):
+        if val == 'Complete':
+            return 'color: green'
+        elif val == 'Incomplete':
+            return 'color: orange'
+        return 'color: red'
+    
+    st.markdown("### Files Status")
+    st.dataframe(
+        files_df.style.applymap(color_status, subset=['Status']),
+        hide_index=True
+    )
+    
+    # File selection
+    st.markdown("### Select File to Annotate")
+    selected_file = st.selectbox(
+        "Choose a file to annotate",
+        options=list(st.session_state.files_data.keys())
+    )
+    
+    if selected_file:
+        file_data = st.session_state.files_data[selected_file]
+        
+        # Save the image temporarily
+        temp_path = "temp_image.jpg"
+        for uploaded_file in uploaded_files:
+            if uploaded_file.name == selected_file:
+                with open(temp_path, "wb") as f:
+                    f.write(uploaded_file.getvalue())
+                break
+        
+        # Point detection annotation
+        points = pointdet(
+            temp_path,
+            label_list=label_list,
+            points=[[p['point'][0], p['point'][1]] for p in file_data['points']],
+            labels=[0 if p['label'] == 'Fiducial' else 1 for p in file_data['points']],
+            height=512,
+            width=512,
+            point_width=3,
+            use_space=True
+        )
+        
+        # Save new annotation
+        if points:  # Only update if we got new points
+            save_annotation(selected_file, points)
+        
+        # Display current annotation table
+        if file_data['points']:  # Use file_data instead of points
+            df_data = []
+            for i, point in enumerate(file_data['points']):
+                df_data.append({
+                    'Type': point['label'],
+                    'Order': i + 1,
+                    'X': f"{point['point'][0]:.1f}",
+                    'Y': f"{point['point'][1]:.1f}"
+                })
+            
+            df = pd.DataFrame(df_data)
+            
+            st.markdown("### Current Annotation")
+            st.dataframe(
+                df.style.applymap(
+                    lambda x: 'color: red' if x == 'Fiducial' else 'color: green',
+                    subset=['Type']
+                ),
+                hide_index=True
+            )
+    
+    # Debug section
+    st.markdown("### Debug Information")
+    st.markdown("All files data:")
+    st.json(st.session_state.files_data)
 
-        with simple_res_col:
-            st.header("Basic Chat")
-            with st.chat_message("human"):
-                st.markdown(user_query)
-            with st.chat_message("ai"):
-                simple_response = st.write_stream(
-                    get_simple_chain_response_stream(
-                        config=config,
-                        inputs=ChainInputs(
-                            user_query=user_query,
-                            chat_history=simple_chat_history,
-                        ),
-                    )
-                )
-                simple_chat_history.append(AIMessage(simple_response))
-
-        with single_web_res_col:
-            st.header("(Single-Task) Web Search Chat")
-            with st.chat_message("human"):
-                st.markdown(user_query)
-            with st.chat_message("ai"):
-                web_response = st.write_stream(
-                    get_single_web_search_chain_response_stream(
-                        config=config,
-                        inputs=ChainInputs(
-                            user_query=user_query,
-                            chat_history=simple_chat_history,
-                        ),
-                    )
-                )
-                single_web_search_chat_history.append(AIMessage(web_response))
-
-        with multi_web_res_col:
-            st.header("(Multi-Task) Web Search Chat")
-            with st.chat_message("human"):
-                st.markdown(user_query)
-            with st.chat_message("ai"):
-                multi_web_response = st.write_stream(
-                    get_multi_web_search_chain_response_stream(
-                        config=config,
-                        inputs=ChainInputs(
-                            user_query=user_query,
-                            chat_history=simple_chat_history,
-                        ),
-                    )
-                )
-                multi_web_search_chat_history.append(AIMessage(multi_web_response))
+# Clean up temporary file
+if os.path.exists("temp_image.jpg"):
+    os.remove("temp_image.jpg")

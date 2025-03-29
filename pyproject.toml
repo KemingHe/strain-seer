@@ -1,51 +1,31 @@
 [project]
-name = "agentic_template"
+name = "strain_seer"
 version = "0.1.0"
-description = "Agentic RAG chatbot template built with Streamlit. MIT License."
+description = "Strain Seer is a free-open-source tool for analyzing force and 2D strain relationships in metamorphic manufacturing."
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 authors = [
     { name = "Keming He", email = "keminghe.career@gmail.com" }
 ]
-keywords = ["agentic", "rag", "chatbot", "streamlit", "template"]
-classifiers = [
-  "Topic :: Scientific/Engineering :: Artificial Intelligence"
-]
+keywords = ["strain", "streamlit", "analysis"]
+classifiers = []
 dependencies = [
-  "streamlit (>=1.42.0,<2.0.0)",
-  "python-dotenv (>=1.0.1,<2.0.0)",
-  "langchain (>=0.3.18,<0.4.0)",
-  "langchain-openai (>=0.3.4,<0.4.0)",
-  "langchain-pinecone (>=0.2.2,<0.3.0)",
-  "pinecone (>=5.4.2,<6.0.0)",
-  "langgraph (>=0.2.70,<0.3.0)",
-  "langsmith (>=0.3.8,<0.4.0)",
-  "duckduckgo-search (>=7.3.2,<8.0.0)",
-  "pydantic (>=2.10.6,<3.0.0)",
-  "httpx (>=0.28.1,<0.29.0)",
-  "pyarrow (==19.0.0)", # Error in 19.0.1: Unable to find installation candidates
-  "langchain-groq (>=0.2.4,<0.3.0)",
-  "langchain-anthropic (>=0.3.7,<0.4.0)"
+    "pyarrow (==19)",
+    "streamlit (>=1.44.0,<2.0.0)",
+    "streamlit-image-annotation (>=0.5.0,<0.6.0)",
+    "matplotlib (>=3.10.1,<4.0.0)"
 ]
 
 [project.urls]
-homepage = "https://agentic-template.streamlit.app"
-repository = "https://github.com/KemingHe/agentic-template"
-documentation = "https://github.com/KemingHe/agentic-template/blob/main/README.md"
-"Bug Tracker" = "https://github.com/KemingHe/agentic-template/issues"
+homepage = "https://strain-seer.streamlit.app"
+repository = "https://github.com/KemingHe/strain-seer"
+documentation = "https://github.com/KemingHe/strain-seer/blob/main/README.md"
+"Bug Tracker" = "https://github.com/KemingHe/strain-seer/issues"
 
 [tool.poetry]
 package-mode = false
 requires-poetry = ">2.0"
-
-[tool.poetry.group.dev.dependencies]
-watchdog = "^6.0.0"
-
-[tool.poetry.group.test.dependencies]
-pytest = "^8.3.4"
-pytest-mock = "^3.14.0"
-pytest-benchmark = "^5.1.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
