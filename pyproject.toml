@@ -27,6 +27,9 @@ documentation = "https://github.com/KemingHe/strain-seer/blob/main/README.md"
 package-mode = false
 requires-poetry = ">2.0"
 
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.5"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
