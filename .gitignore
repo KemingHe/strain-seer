@@ -1,3 +1,6 @@
+# OS auto-generated files
+*.DS_Store
+
 # Ruff
 .ruff_cache
 
