@@ -5,63 +5,49 @@ from typing import Dict, List, TypedDict, Optional
 import uuid
 
 # Third-party library imports
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from PIL import Image
-from scipy import stats
 import streamlit as st
 from streamlit_image_annotation import pointdet
 
 # Local application imports
-from strain_analysis import normalize_points_by_scale, calculate_strain_tensor
-
-# Configure Streamlit page with favicon and wide layout for better visualization
-st.set_page_config(
-    page_title="Strain Seer - 2D Strain Analysis Tool", page_icon="📍", layout="wide"
+from strain_analysis_core import normalize_points_by_scale, calculate_strain_tensor
+from strain_analysis_data import (
+    StrainData,
+    RegressionResult,
+    AnalysisResults,
+    analyze_strain_data,
+    create_strain_plot,
+    create_strain_dataframe,
+    export_raw_data,
+    export_analysis_results,
+    format_scientific,
+)
+from strain_analysis_ui import (
+    Point,
+    FileData,
+    TEMP_IMAGE_PATH,
+    setup_page_config,
+    initialize_session_state,
+    validate_annotation,
+    save_annotation,
+    display_files_table,
+    display_point_coordinates,
+    display_analysis_results,
+    display_export_section,
+    cleanup_temp_files,
 )
 
-# Initialize session state to persist data between reruns
-# Using session state ensures data survives page refreshes and maintains user progress
-if "files_data" not in st.session_state:
-    st.session_state.files_data = {}
-if "analysis_results" not in st.session_state:
-    st.session_state.analysis_results = None
-if "last_scale_length" not in st.session_state:
-    st.session_state.last_scale_length = 10.0
+# Configure Streamlit page
+setup_page_config()
 
-# Privacy notice to inform users about local data storage
+# Initialize session state
+initialize_session_state()
+
+# Privacy notice
 st.info(
     "🔒 Your work is saved locally in this browser tab - remember to export your data before closing"
 )
-
-
-# Type definitions for better code maintainability and IDE support
-class Point(TypedDict):
-    point: List[float]  # [x, y] coordinates
-    label: str  # 'Fiducial' or 'Scale'
-    label_id: int  # 0 for Fiducial, 1 for Scale
-
-
-class FileData(TypedDict):
-    id: str
-    filename: str
-    order: int
-    points: List[Point]
-    status: tuple[bool, str]  # (is_valid, status_message)
-    deformation_distance: Optional[float]
-
-
-class AnalysisResults(TypedDict):
-    strain_data: List[Dict]
-    scale_length: float
-    regression_results: Dict[str, Dict]
-
-
-# Configure temporary file handling for image processing
-TEMP_DIR = os.path.expanduser("~/tmp")
-TEMP_IMAGE_PATH = os.path.join(TEMP_DIR, "temp_image.jpg")
-os.makedirs(TEMP_DIR, exist_ok=True)
 
 # Title and description
 st.title("Strain Seer - 2D Strain Analysis Tool")
@@ -146,78 +132,6 @@ with col2:
 # Define label list with colors
 label_list = ["Fiducial", "Scale"]
 
-
-def validate_annotation(
-    points: List[Point], deformation_distance: Optional[float]
-) -> tuple[bool, str]:
-    """Validate annotation completeness and correctness.
-
-    Returns:
-        tuple[bool, str]: (is_valid, status_message)
-        - is_valid: True if all required points are present and deformation distance is set
-        - status_message: Human-readable status description
-    """
-    if not points:
-        return False, "Missing"
-
-    # Count point types to ensure correct number of each
-    fiducial_count = sum(1 for p in points if p["label"] == "Fiducial")
-    scale_count = sum(1 for p in points if p["label"] == "Scale")
-
-    if fiducial_count != 5 or scale_count != 2:
-        return False, "Incomplete"
-    if deformation_distance is None:
-        return False, "Missing Distance"
-    return True, "Complete"
-
-
-def save_annotation(
-    file_id: str,
-    filename: str,
-    order: int,
-    points: Optional[List[Point]] = None,
-    deformation_distance: Optional[float] = None,
-) -> None:
-    """Save or update annotation data in session state.
-
-    Args:
-        file_id: Unique identifier for the file
-        filename: Original filename
-        order: Sequence order for analysis
-        points: Optional list of annotated points
-        deformation_distance: Optional deformation distance in mm
-    """
-    # Preserve existing data if updating
-    current_data = st.session_state.files_data.get(
-        file_id,
-        {
-            "id": file_id,
-            "filename": filename,
-            "order": order,
-            "points": [],
-            "deformation_distance": None,
-            "status": (False, "Missing"),
-        },
-    )
-
-    # Update only provided fields while preserving others
-    st.session_state.files_data[file_id] = {
-        "id": file_id,
-        "filename": filename,
-        "order": order,
-        "points": points or current_data["points"],
-        "deformation_distance": deformation_distance
-        if deformation_distance is not None
-        else current_data["deformation_distance"],
-        "status": validate_annotation(
-            points or current_data["points"],
-            deformation_distance
-            if deformation_distance is not None
-            else current_data["deformation_distance"],
-        ),
-    }
-
-
 # File uploader
 uploaded_files = st.file_uploader(
     "Choose image files",
@@ -238,46 +152,18 @@ for i, uploaded_file in enumerate(uploaded_files):
 
 # Display files table with status
 if st.session_state.files_data:
-    # Sort files by order
-    sorted_files = sorted(
-        st.session_state.files_data.values(), key=lambda x: x["order"]
-    )
-
-    files_df = pd.DataFrame(
-        [
-            {
-                "Order": data["order"] + 1,  # 1-based index for display
-                "File": data["filename"],
-                "Status": data["status"][1],
-                "Fiducial Points": sum(
-                    1 for p in data["points"] if p["label"] == "Fiducial"
-                ),
-                "Scale Points": sum(1 for p in data["points"] if p["label"] == "Scale"),
-                "Deformation Distance (mm)": data["deformation_distance"]
-                if data["deformation_distance"] is not None
-                else "Not Set",
-            }
-            for data in sorted_files
-        ]
-    )
-
-    # Color coding for status
-    def color_status(val):
-        if val == "Complete":
-            return "color: green"
-        elif val == "Incomplete":
-            return "color: orange"
-        elif val == "Missing Distance":
-            return "color: purple"
-        return "color: red"
-
-    st.markdown("### 📊 Files Status")
-    st.dataframe(files_df.style.map(color_status, subset=["Status"]), hide_index=True)
+    display_files_table(st.session_state.files_data)
 
     # File selection and annotation section
     st.markdown("### 🎯 Image Annotation")
     selected_filename = st.selectbox(
-        "Select image to annotate", options=[data["filename"] for data in sorted_files]
+        "Select image to annotate",
+        options=[
+            data["filename"]
+            for data in sorted(
+                st.session_state.files_data.values(), key=lambda x: x["order"]
+            )
+        ],
     )
 
     if selected_filename:
@@ -315,29 +201,8 @@ if st.session_state.files_data:
             use_space=True,
         )
 
-        # Display current annotation table
-        if file_data["points"]:
-            df_data = []
-            for i, point in enumerate(file_data["points"]):
-                df_data.append(
-                    {
-                        "Type": point["label"],
-                        "Order": i + 1,
-                        "X": f"{point['point'][0]:.1f}",
-                        "Y": f"{point['point'][1]:.1f}",
-                    }
-                )
-
-            df = pd.DataFrame(df_data)
-
-            st.markdown("#### Point Coordinates")
-            st.dataframe(
-                df.style.map(
-                    lambda x: "color: red" if x == "Fiducial" else "color: green",
-                    subset=["Type"],
-                ),
-                hide_index=True,
-            )
+        # Display point coordinates
+        display_point_coordinates(file_data["points"])
 
         # Add deformation distance input after annotation display
         st.markdown("#### Deformation Distance")
@@ -358,11 +223,6 @@ if st.session_state.files_data:
             points,
             deformation_distance,
         )
-
-    # Debug section
-    # st.markdown("### Debug Information")
-    # st.markdown("All files data:")
-    # st.json(st.session_state.files_data)
 
     # Analysis Section
     st.markdown("---")  # Horizontal rule
@@ -422,7 +282,9 @@ if st.session_state.files_data:
         ):
             # Process all files and calculate strain tensors
             strain_data = []
-            for data in sorted_files:
+            for data in sorted(
+                st.session_state.files_data.values(), key=lambda x: x["order"]
+            ):
                 # Extract points
                 fiducial_points = []
                 scale_points = []
@@ -432,9 +294,21 @@ if st.session_state.files_data:
                     else:
                         scale_points.append(point["point"])
 
-                # Convert to numpy arrays
+                # Convert to numpy arrays and validate
                 fiducial_points = np.array(fiducial_points)
                 scale_points = np.array(scale_points)
+
+                # Validate number of points
+                if len(fiducial_points) != 5:
+                    st.error(
+                        f"File {data['filename']} must have exactly 5 fiducial points"
+                    )
+                    continue
+                if len(scale_points) != 2:
+                    st.error(
+                        f"File {data['filename']} must have exactly 2 scale points"
+                    )
+                    continue
 
                 # Normalize points
                 normalized_points = normalize_points_by_scale(
@@ -454,266 +328,24 @@ if st.session_state.files_data:
                     }
                 )
 
-            # Calculate regression results
-            x_values = [d["deformation_distance"] for d in strain_data]
-            regression_results = {}
-
-            # X-axis strain
-            y_values = [d["strain_tensor"][0, 0] for d in strain_data]
-            slope, intercept, r_value, p_value, std_err = stats.linregress(
-                x_values, y_values
+            # Analyze strain data
+            st.session_state.analysis_results = analyze_strain_data(
+                strain_data, scale_length
             )
-            regression_results["x_axis"] = {
-                "slope": float(slope),
-                "intercept": float(intercept),
-                "r_squared": float(r_value**2),
-                "p_value": float(p_value),
-            }
-
-            # Y-axis strain
-            y_values = [d["strain_tensor"][1, 1] for d in strain_data]
-            slope, intercept, r_value, p_value, std_err = stats.linregress(
-                x_values, y_values
-            )
-            regression_results["y_axis"] = {
-                "slope": float(slope),
-                "intercept": float(intercept),
-                "r_squared": float(r_value**2),
-                "p_value": float(p_value),
-            }
-
-            # Shear strain
-            y_values = [d["strain_tensor"][0, 1] for d in strain_data]
-            slope, intercept, r_value, p_value, std_err = stats.linregress(
-                x_values, y_values
-            )
-            regression_results["shear"] = {
-                "slope": float(slope),
-                "intercept": float(intercept),
-                "r_squared": float(r_value**2),
-                "p_value": float(p_value),
-            }
-
-            # Store results in session state
-            st.session_state.analysis_results = {
-                "strain_data": strain_data,
-                "scale_length": scale_length,
-                "regression_results": regression_results,
-            }
 
         # Display analysis results
-        strain_data = st.session_state.analysis_results["strain_data"]
-        regression_results = st.session_state.analysis_results["regression_results"]
-        x_values = [d["deformation_distance"] for d in strain_data]
+        display_analysis_results(
+            st.session_state.analysis_results["strain_data"],
+            st.session_state.analysis_results["regression_results"],
+        )
 
-        # Create three columns for visualization
-        col1, col2, col3 = st.columns(3)
-
-        def format_scientific(value: float, unit: str = "") -> str:
-            """Format numbers in scientific notation for better readability of very small/large values.
-
-            Args:
-                value: The number to format
-                unit: Optional unit to append to the formatted number
-
-            Returns:
-                str: Formatted number with optional unit
-            """
-            if abs(value) < 1e-6 or (abs(value) > 1e6 and value != 0):
-                return f"{value:.2e} {unit}"
-            return f"{value:.6f} {unit}".rstrip("0").rstrip(".")
-
-        with col1:
-            st.markdown("### 📈 X-Axis Strain (εxx)")
-            y_values = [d["strain_tensor"][0, 0] for d in strain_data]
-            results = regression_results["x_axis"]
-
-            # Create plot
-            fig, ax = plt.subplots()
-            ax.scatter(x_values, y_values, color="blue", label="Data points")
-            ax.plot(
-                x_values,
-                [results["slope"] * x + results["intercept"] for x in x_values],
-                color="red",
-                label="Regression line",
-            )
-            ax.set_xlabel("Deformation Distance (mm)")
-            ax.set_ylabel("Strain (εxx)")
-            ax.legend()
-            st.pyplot(fig)
-
-            # Display regression info with scientific formatting
-            st.markdown(f"""
-            **Regression Equation:**  
-            εxx = {format_scientific(results["slope"], "mm⁻¹")}x + {format_scientific(results["intercept"], "")}
-            
-            **R² Value:** {format_scientific(results["r_squared"], "")}
-            **P-value:** {format_scientific(results["p_value"], "")}
-            """)
-
-            # Display data table with scientific formatting
-            df_x = pd.DataFrame(
-                {
-                    "Distance (mm)": [f"{x:.2f}" for x in x_values],
-                    "εxx": [format_scientific(y, "") for y in y_values],
-                }
-            )
-            st.dataframe(df_x)
-
-        with col2:
-            st.markdown("### 📈 Y-Axis Strain (εyy)")
-            y_values = [d["strain_tensor"][1, 1] for d in strain_data]
-            results = regression_results["y_axis"]
-
-            # Create plot
-            fig, ax = plt.subplots()
-            ax.scatter(x_values, y_values, color="blue", label="Data points")
-            ax.plot(
-                x_values,
-                [results["slope"] * x + results["intercept"] for x in x_values],
-                color="red",
-                label="Regression line",
-            )
-            ax.set_xlabel("Deformation Distance (mm)")
-            ax.set_ylabel("Strain (εyy)")
-            ax.legend()
-            st.pyplot(fig)
-
-            # Display regression info with scientific formatting
-            st.markdown(f"""
-            **Regression Equation:**  
-            εyy = {format_scientific(results["slope"], "mm⁻¹")}x + {format_scientific(results["intercept"], "")}
-            
-            **R² Value:** {format_scientific(results["r_squared"], "")}
-            **P-value:** {format_scientific(results["p_value"], "")}
-            """)
-
-            # Display data table with scientific formatting
-            df_y = pd.DataFrame(
-                {
-                    "Distance (mm)": [f"{x:.2f}" for x in x_values],
-                    "εyy": [format_scientific(y, "") for y in y_values],
-                }
-            )
-            st.dataframe(df_y)
-
-        with col3:
-            st.markdown("### 📈 Shear Strain (εxy)")
-            y_values = [d["strain_tensor"][0, 1] for d in strain_data]
-            results = regression_results["shear"]
-
-            # Create plot
-            fig, ax = plt.subplots()
-            ax.scatter(x_values, y_values, color="blue", label="Data points")
-            ax.plot(
-                x_values,
-                [results["slope"] * x + results["intercept"] for x in x_values],
-                color="red",
-                label="Regression line",
-            )
-            ax.set_xlabel("Deformation Distance (mm)")
-            ax.set_ylabel("Strain (εxy)")
-            ax.legend()
-            st.pyplot(fig)
-
-            # Display regression info with scientific formatting
-            st.markdown(f"""
-            **Regression Equation:**  
-            εxy = {format_scientific(results["slope"], "mm⁻¹")}x + {format_scientific(results["intercept"], "")}
-            
-            **R² Value:** {format_scientific(results["r_squared"], "")}
-            **P-value:** {format_scientific(results["p_value"], "")}
-            """)
-
-            # Display data table with scientific formatting
-            df_xy = pd.DataFrame(
-                {
-                    "Distance (mm)": [f"{x:.2f}" for x in x_values],
-                    "εxy": [format_scientific(y, "") for y in y_values],
-                }
-            )
-            st.dataframe(df_xy)
-
-        # Data export section
-        st.markdown("---")  # Horizontal rule
-        st.markdown("### 📥 Data Export")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.markdown("#### 📄 Raw Data")
-            st.markdown("""
-            Available formats:
-            - JSON: File data + scale length
-            - CSV: Strain components
-            """)
-
-            # Convert strain data to JSON-serializable format
-            raw_data = {
-                "files_data": st.session_state.files_data,
-                "scale_length": scale_length,
-            }
-            json_str = json.dumps(raw_data, indent=2)
-            st.download_button(
-                "Download Raw Data (JSON)",
-                json_str,
-                file_name="raw_data.json",
-                mime="application/json",
-            )
-
-            # Convert to CSV
-            csv_data = []
-            for data in strain_data:
-                csv_data.append(
-                    {
-                        "filename": data["filename"],
-                        "deformation_distance": data["deformation_distance"],
-                        "strain_xx": data["strain_tensor"][0, 0],
-                        "strain_yy": data["strain_tensor"][1, 1],
-                        "strain_xy": data["strain_tensor"][0, 1],
-                    }
-                )
-            df_csv = pd.DataFrame(csv_data)
-            csv_str = df_csv.to_csv(index=False)
-            st.download_button(
-                "Download Raw Data (CSV)",
-                csv_str,
-                file_name="raw_data.csv",
-                mime="text/csv",
-            )
-
-        with col2:
-            st.markdown("#### 📊 Analysis Results")
-            st.markdown("""
-            Available formats:
-            - JSON: Regression parameters
-            - CSV: Regression data
-            """)
-
-            # Download JSON
-            json_str = json.dumps(regression_results, indent=2)
-            st.download_button(
-                "Download Analysis Results (JSON)",
-                json_str,
-                file_name="analysis_results.json",
-                mime="application/json",
-            )
-
-            # Download CSV
-            analysis_df = pd.DataFrame(
-                [
-                    {"component": "x_axis", **regression_results["x_axis"]},
-                    {"component": "y_axis", **regression_results["y_axis"]},
-                    {"component": "shear", **regression_results["shear"]},
-                ]
-            )
-            csv_str = analysis_df.to_csv(index=False)
-            st.download_button(
-                "Download Analysis Results (CSV)",
-                csv_str,
-                file_name="analysis_results.csv",
-                mime="text/csv",
-            )
+        # Display export section
+        display_export_section(
+            st.session_state.files_data,
+            scale_length,
+            st.session_state.analysis_results["strain_data"],
+            st.session_state.analysis_results["regression_results"],
+        )
 
         # Important notice
         st.markdown("---")  # Horizontal rule
@@ -725,6 +357,5 @@ if st.session_state.files_data:
         3. All data will be cleared and you can start fresh
         """)
 
-# Clean up temporary file to prevent disk space issues
-if os.path.exists(TEMP_IMAGE_PATH):
-    os.remove(TEMP_IMAGE_PATH)
+# Clean up temporary files
+cleanup_temp_files()
