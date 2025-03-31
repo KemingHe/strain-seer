@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from strain_analysis import normalize_points_by_scale, calculate_strain_tensor
+from strain_analysis_core import normalize_points_by_scale, calculate_strain_tensor
 
 
 def test_normalize_points_by_scale():
