@@ -14,7 +14,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   build-and-push-image:
-    if: github.repository == 'KemingHe/strain-seer' && github.ref == 'refs/heads/main'
+    if: github.repository == 'KemingHe/strain-seer' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: read
