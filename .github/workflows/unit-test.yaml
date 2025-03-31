@@ -1,0 +1,49 @@
+name: Unit Test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * 0'
+
+jobs:
+  unit-test:
+    if: github.repository == 'KemingHe/strain-seer'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+      POETRY_VERSION: 2.1.2
+      POETRY_VIRTUALENVS_CREATE: false
+      POETRY_NO_INTERACTION: 1
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: Install dependencies
+        run: poetry install --with dev
+
+      - name: Run pytest
+        run: poetry run pytest --cov --cov-branch --cov-report=xml
+
+      - name: Upload coverage reports to Codecov
+        # Pinned to commit hash of release v5.1.2 on 12/18/24
+        uses: codecov/codecov-action@1e68e06f1dbfde0e4cefc87efeba9e4643565303
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: ${{ github.repository }}
+          
