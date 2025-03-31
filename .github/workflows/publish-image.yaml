@@ -1,7 +1,9 @@
 name: Publish Image
 
 on:
-  workflow_dispatch:
+  release:
+    types:
+      - published
 
 # Defines custom environment variables for the workflow
 env:
