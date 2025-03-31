@@ -1,12 +1,24 @@
-# Strain Seer 📊
+# [Strain Seer](https://github.com/KemingHe/strain-seer) 📊
 
-A Streamlit-based web application for 2D strain analysis using fiducial markers. Built for researchers and developers who need to analyze material deformation from image sequences.
+A Streamlit-based web application for 2D strain analysis using fiducial markers, designed for researchers and developers analyzing material deformation from image sequences.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🎯 What is Strain Seer?
+## 🚀 Try It Now
 
-Strain Seer is a powerful tool for analyzing material deformation through image sequences. It's particularly useful for:
+1. **Live Demo**: Visit [strain-seer.streamlit.app](https://strain-seer.streamlit.app)
+   - Note: The demo may take a few moments to wake up if it's been inactive
+   - No installation required - just open and start analyzing!
+
+2. **Demo PDF**: Check out our [example analysis](docs/demo-analysis.pdf) showing a complete use case
+   - Perfect for understanding the workflow before trying it yourself
+   - Includes step-by-step screenshots and results
+
+3. **Local Installation**: See [Quick Start](#-quick-start) below for detailed setup instructions
+
+## 🎯 Applications
+
+Strain Seer is particularly useful for:
 
 - **Material Science & Engineering**: Study polymer deformation, composite materials, and structural components
 - **Biomechanics**: Analyze soft tissue mechanics and biological material behavior
@@ -17,7 +29,25 @@ For a detailed understanding of 2D strain analysis and how Strain Seer implement
 
 ## 🚀 Quick Start
 
-### Option 1: Local Installation
+### Option 1: Using Published Docker Image (Recommended)
+
+```bash
+# Pull and run the latest version
+docker run -d -p 8501:8501 --name strain-seer ghcr.io/keminghe/strain-seer:latest
+
+# Or pull a specific version
+docker run -d -p 8501:8501 --name strain-seer ghcr.io/keminghe/strain-seer:v1.0.0
+```
+
+### Option 2: Building Docker Image Locally
+
+```bash
+# Build and run with Docker
+docker build -t strain-seer .
+docker run -d -p 8501:8501 --name strain-seer strain-seer
+```
+
+### Option 3: Local Installation (Advanced)
 
 ```bash
 # Install pyenv (recommended for Python version management)
@@ -46,14 +76,6 @@ poetry install
 streamlit run streamlit_app.py
 ```
 
-### Option 2: Docker Deployment
-
-```bash
-# Build and run with Docker
-docker build -t strain-seer .
-docker run -d -p 8501:8501 --name strain-seer strain-seer
-```
-
 For detailed Docker setup and configuration, see our [Docker Design](docs/docker-design.md) documentation.
 
 ## 🛠️ Key Features
@@ -70,12 +92,6 @@ For detailed Docker setup and configuration, see our [Docker Design](docs/docker
 - [Docker Design](docs/docker-design.md): Container deployment and configuration
 - [Version Management](docs/version-management.md): Project versioning and release process
 - [Developer Guide](docs/developer-guide.md): Extend and customize Strain Seer's core functionality
-
-## 🔗 Links
-
-- [Live Demo](https://strain-seer.streamlit.app)
-- [GitHub Repository](https://github.com/KemingHe/strain-seer)
-- [Issue Tracker](https://github.com/KemingHe/strain-seer/issues)
 
 ## 🤝 Contributing
 
