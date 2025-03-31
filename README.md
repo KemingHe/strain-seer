@@ -4,7 +4,7 @@ A Streamlit-based web application for 2D strain analysis using fiducial markers.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## ⚠️ Important Requirements
+## ⚠️ Requirements
 
 - Python: `3.12.5`
 - Poetry: `>2.0`
@@ -187,12 +187,6 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 - [Live Demo](https://strain-seer.streamlit.app)
 - [GitHub Repository](https://github.com/KemingHe/strain-seer)
 - [Issue Tracker](https://github.com/KemingHe/strain-seer/issues)
-
-## 🙏 Acknowledgments
-
-- Streamlit team for the amazing framework
-- Open-source community for various dependencies
-- Researchers who provided feedback and suggestions
 
 ## 📝 Copyright
 
