@@ -1,6 +1,6 @@
 [project]
 name = "strain_seer"
-version = "0.1.0"
+version = "1.0.0"
 description = "Strain Seer is a free-open-source tool for analyzing force and 2D strain relationships in metamorphic manufacturing."
 license = { file = "LICENSE" }
 readme = "README.md"
