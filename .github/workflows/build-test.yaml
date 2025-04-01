@@ -8,7 +8,7 @@ on:
     - cron: '0 7 * * 0'
 
 jobs:
-  build-test:
+  build-test-amd64:
     if: github.repository == 'KemingHe/strain-seer'
     runs-on: ubuntu-latest
     permissions:
@@ -20,7 +20,73 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
-      # Add support for more platforms, i.e. linux/arm64 (macOS M1/M2) with QEMU
+      # Enable advanced build features
+      - name: Set up Docker Buildx
+        # Pinned 3rd party action to commit hash of release v3.10.0 on 02/26/2025 to prevent supply chain attacks
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
+
+      - name: Build Docker image
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg BUILD_DATE=${{ github.event.head_commit.timestamp }} \
+            --build-arg VCS_REF=${{ github.sha }} \
+            --load \
+            .
+
+      - name: Run E2E test
+        run: |
+          # Start the container in detached mode
+          docker run -d -p 8501:8501 --name strain-seer-test-amd64 strain-seer
+          
+          # Wait for the container to be healthy
+          echo "Waiting for container to be healthy..."
+          for i in {1..30}; do
+            if docker ps --filter "name=strain-seer-test-amd64" --filter "health=healthy" | grep -q "strain-seer-test-amd64"; then
+              echo "Container is healthy!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Container failed to become healthy within 30 seconds"
+              docker logs strain-seer-test-amd64
+              exit 1
+            fi
+            sleep 1
+          done
+          
+          # Test the Streamlit health endpoint
+          echo "Testing Streamlit health endpoint..."
+          curl -f http://localhost:8501/_stcore/health || {
+            echo "Health check failed"
+            docker logs strain-seer-test-amd64
+            exit 1
+          }
+          
+          # Test the main Streamlit endpoint
+          echo "Testing main Streamlit endpoint..."
+          curl -f http://localhost:8501 || {
+            echo "Main endpoint check failed"
+            docker logs strain-seer-test-amd64
+            exit 1
+          }
+          
+          # Clean up
+          docker stop strain-seer-test-amd64
+          docker rm strain-seer-test-amd64
+
+  build-test-arm64:
+    if: github.repository == 'KemingHe/strain-seer'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      # Add support for ARM64 with QEMU
       - name: Set up QEMU
         # Pinned 3rd party action to commit hash of release v3.6.0 on 02/28/2025 to prevent supply chain attacks
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
@@ -33,7 +99,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker buildx build \
-            --platform linux/amd64,linux/arm64/v8 \
+            --platform linux/arm64 \
             --build-arg BUILD_DATE=${{ github.event.head_commit.timestamp }} \
             --build-arg VCS_REF=${{ github.sha }} \
             --load \
@@ -42,18 +108,18 @@ jobs:
       - name: Run E2E test
         run: |
           # Start the container in detached mode
-          docker run -d -p 8501:8501 --name strain-seer-test strain-seer
+          docker run -d -p 8501:8501 --name strain-seer-test-arm64 strain-seer
           
           # Wait for the container to be healthy
           echo "Waiting for container to be healthy..."
           for i in {1..30}; do
-            if docker ps --filter "name=strain-seer-test" --filter "health=healthy" | grep -q "strain-seer-test"; then
+            if docker ps --filter "name=strain-seer-test-arm64" --filter "health=healthy" | grep -q "strain-seer-test-arm64"; then
               echo "Container is healthy!"
               break
             fi
             if [ $i -eq 30 ]; then
               echo "Container failed to become healthy within 30 seconds"
-              docker logs strain-seer-test
+              docker logs strain-seer-test-arm64
               exit 1
             fi
             sleep 1
@@ -63,7 +129,7 @@ jobs:
           echo "Testing Streamlit health endpoint..."
           curl -f http://localhost:8501/_stcore/health || {
             echo "Health check failed"
-            docker logs strain-seer-test
+            docker logs strain-seer-test-arm64
             exit 1
           }
           
@@ -71,10 +137,10 @@ jobs:
           echo "Testing main Streamlit endpoint..."
           curl -f http://localhost:8501 || {
             echo "Main endpoint check failed"
-            docker logs strain-seer-test
+            docker logs strain-seer-test-arm64
             exit 1
           }
           
           # Clean up
-          docker stop strain-seer-test
-          docker rm strain-seer-test
+          docker stop strain-seer-test-arm64
+          docker rm strain-seer-test-arm64
