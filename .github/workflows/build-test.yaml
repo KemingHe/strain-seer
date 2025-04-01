@@ -16,7 +16,7 @@ jobs:
       packages: read
     env:
       REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}
+      IMAGE_NAME: keminghe/strain-seer
 
     steps:
       - name: Checkout repository

@@ -8,7 +8,7 @@ on:
 # Defines custom environment variables for the workflow
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: keminghe/strain-seer
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
