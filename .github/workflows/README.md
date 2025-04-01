@@ -72,21 +72,43 @@ To remove Codecov (if you don't need coverage tracking):
 
 ### 2. Build Test (`build-test.yaml`)
 
-- **Purpose**: Validates Docker image builds without publishing
+- **Purpose**: Validates Docker image builds and runtime functionality
 - **When**: Runs on every push, pull request, and weekly (Sunday 7:00 UTC)
 - **What**:
   - Builds Docker image for multiple platforms (amd64, arm64)
-  - Uses GitHub Actions cache for faster builds
+  - Runs end-to-end tests to verify container functionality
   - Validates build process without pushing
 - **Why**:
   - Ensure Docker builds work across platforms
-  - Catch build issues before they reach production
-  - Optimize build performance with caching
+  - Verify container runtime behavior
+  - Catch build and runtime issues before they reach production
+
+#### **Build Process:**
+
+1. **Multi-Platform Build**
+   - Uses Docker Buildx for multi-architecture support
+   - Builds for both AMD64 and ARM64 platforms
+   - Loads image into local Docker daemon for testing
+
+2. **End-to-End Testing**
+   - Starts container in detached mode
+   - Verifies container health status
+   - Tests Streamlit health endpoint (`/_stcore/health`)
+   - Validates main application endpoint
+   - Includes proper cleanup of test containers
+
+#### **Test Verification:**
+
+- Container health check (30-second timeout)
+- Streamlit health endpoint accessibility
+- Main application endpoint accessibility
+- Container cleanup verification
 
 **Troubleshooting Build Issues:**
 
 - Check Actions logs for specific error messages
 - Verify Dockerfile syntax and dependencies
+- Review container logs if health checks fail
 - Ensure all required secrets are set
 
 ### 3. Docker Publish (`docker-publish.yaml`)
