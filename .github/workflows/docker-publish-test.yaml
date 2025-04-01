@@ -1,32 +1,59 @@
-name: Publish Image
+# Purpose:
+# This workflow is designed for testing Docker image builds and publishing before creating official releases.
+# It differs from the main docker-publish workflow in several ways:
+# 1. Manual trigger (workflow_dispatch) instead of release-based
+# 2. Restricted to repository owners and admins only for security
+# 3. Uses unique test-specific tags that include:
+#    - Custom test name (provided at runtime)
+#    - Git commit SHA
+#    - Run number and attempt
+#    - Timestamp
+#
+# Usage:
+# 1. Go to the Actions tab in the repository
+# 2. Select "Publish Test Image" workflow
+# 3. Click "Run workflow" and optionally provide a test name
+# 4. The workflow will build and push the image with a unique test tag
+# 5. After testing, you can delete the test image using the command provided in the workflow output
+#
+# Important Notes:
+# - Test images are tagged distinctly from release images to prevent confusion
+# - Each test build creates a unique tag, making it easy to track and clean up
+# - The workflow outputs the exact command needed to delete the test image
+# - This workflow is meant for testing purposes only and should not be used for production releases
+
+name: Publish Test Image
 
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
+    inputs:
+      test_name:
+        description: 'Name of the test build (will be used in tag)'
+        required: true
+        type: string
+        default: 'manual-test'
 
 # Defines custom environment variables for the workflow
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+# Restrict to repository owners and admins only
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
 
 jobs:
-  build-and-push-image:
-    if: github.repository == 'KemingHe/strain-seer' && startsWith(github.ref, 'refs/tags/v')
+  build-and-push-test-image:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
+    # Only allow repository owners to run this workflow
+    if: github.actor == github.repository_owner
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
 
       - name: Log in to the Container registry
         # Pinned 3rd party action to commit hash of release v3.4.0 on 03/14/2025 to prevent supply chain attacks
@@ -43,17 +70,12 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=test-${{ inputs.test_name }}-${{ github.sha }}-${{ github.run_number }}-${{ github.run_attempt }}-${{ github.event.inputs.test_name }}
 
-      # Add support for more platforms, i.e. linux/arm64 (macOS M1/M2) with QEMU
       - name: Set up QEMU
         # Pinned 3rd party action to commit hash of release v3.6.0 on 02/28/2025 to prevent supply chain attacks
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
 
-      # Enable advanced build features like cache export
       - name: Set up Docker Buildx
         # Pinned 3rd party action to commit hash of release v3.10.0 on 02/26/2025 to prevent supply chain attacks
         uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
@@ -70,7 +92,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache
           cache-to: type=gha,mode=max,type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache
-          build-args: BUILD_DATE=${{ github.event.release.created_at }},VCS_REF=${{ github.sha }}
+          build-args: BUILD_DATE=${{ github.event.inputs.test_name }},VCS_REF=${{ github.sha }}
           outputs: type=image,imageid=imageid,digest=digest,metadata=metadata
 
       - name: Generate artifact attestation
@@ -79,3 +101,11 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+
+      - name: Output image information
+        run: |
+          echo "Test image has been published with the following tags:"
+          echo "${{ steps.meta.outputs.tags }}"
+          echo "To delete this test image later, you can use:"
+          echo "docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test-${{ inputs.test_name }}-${{ github.sha }}-${{ github.run_number }}-${{ github.run_attempt }}-${{ github.event.inputs.test_name }}" 
+          
