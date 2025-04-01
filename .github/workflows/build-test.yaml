@@ -16,7 +16,9 @@ jobs:
       packages: read
     env:
       REGISTRY: ghcr.io
+      # Docker requires lowercase names for both images and cache references
       IMAGE_NAME: keminghe/strain-seer
+      REPO_NAME: keminghe/strain-seer
 
     steps:
       - name: Checkout repository
@@ -63,6 +65,6 @@ jobs:
           platforms: linux/amd64,linux/arm64/v8
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache
-          cache-to: type=gha,mode=max,type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache
+          cache-from: type=gha,type=registry,ref=${{ env.REGISTRY }}/${{ env.REPO_NAME }}:buildcache
+          cache-to: type=gha,mode=max,type=registry,ref=${{ env.REGISTRY }}/${{ env.REPO_NAME }}:buildcache
           build-args: BUILD_DATE=${{ github.event.head_commit.timestamp }},VCS_REF=${{ github.sha }}

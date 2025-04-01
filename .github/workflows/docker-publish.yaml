@@ -8,7 +8,9 @@ on:
 # Defines custom environment variables for the workflow
 env:
   REGISTRY: ghcr.io
+  # Docker requires lowercase names for both images and cache references
   IMAGE_NAME: keminghe/strain-seer
+  REPO_NAME: keminghe/strain-seer
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -68,8 +70,8 @@ jobs:
           platforms: linux/amd64,linux/arm64/v8
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache
-          cache-to: type=gha,mode=max,type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache
+          cache-from: type=gha,type=registry,ref=${{ env.REGISTRY }}/${{ env.REPO_NAME }}:buildcache
+          cache-to: type=gha,mode=max,type=registry,ref=${{ env.REGISTRY }}/${{ env.REPO_NAME }}:buildcache
           build-args: BUILD_DATE=${{ github.event.release.created_at }},VCS_REF=${{ github.sha }}
           outputs: type=image,imageid=imageid,digest=digest,metadata=metadata
 
