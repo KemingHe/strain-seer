@@ -45,7 +45,7 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 # UI Configuration
 PAGE_CONFIG = {
     "page_title": "Strain Seer - 2D Strain Analysis Tool",
-    "page_icon": "📍",
+    "page_icon": "👁️",
     "layout": "wide",
 }
 

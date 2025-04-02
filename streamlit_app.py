@@ -50,7 +50,7 @@ st.info(
 )
 
 # Title and description
-st.title("Strain Seer - 2D Strain Analysis Tool")
+st.title("👁️ Strain Seer - 2D Strain Analysis Tool")
 
 # Main description
 st.markdown("""
