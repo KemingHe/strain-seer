@@ -10,9 +10,10 @@ A Streamlit-based web application for 2D strain analysis using fiducial markers,
    - Note: The demo may take a few moments to wake up if it's been inactive
    - No installation required - just open and start analyzing!
 
-2. **Demo PDF**: Check out our [example analysis](docs/demo-analysis.pdf) showing a complete use case
+2. **Demo PDF**: Check out our [example analysis](docs/strain-seer-demo.pdf) showing a complete use case
    - Perfect for understanding the workflow before trying it yourself
    - Includes step-by-step screenshots and results
+   - Sample data files are available in the docs directory, including [raw data](docs/strain-seer-demo-raw-data.csv) and [analysis results](docs/strain-seer-demo-analysis-result.csv)
 
 3. **Local Installation**: See [Quick Start](#-quick-start) below for detailed setup instructions
 
@@ -25,7 +26,7 @@ Strain Seer is particularly useful for:
 - **Manufacturing**: Monitor material fatigue, quality control, and process optimization
 - **Research & Development**: Develop custom strain formulations and multi-scale analysis methods
 
-For a detailed understanding of 2D strain analysis and how Strain Seer implements it, check out our [Understanding 2D Strain](docs/understanding-2d-strain.md) guide.
+For a detailed understanding of 2D strain analysis and how Strain Seer implements it, check out our [Understanding 2D Strain](docs/understanding-2d-strain.md) guide, which includes point labeling conventions, strain tensor explanations with visual examples, and step-by-step calculation processes.
 
 ## 🚀 Quick Start
 
@@ -38,6 +39,8 @@ docker run -d -p 8501:8501 --name strain-seer ghcr.io/keminghe/strain-seer:lates
 # Or pull a specific version
 docker run -d -p 8501:8501 --name strain-seer ghcr.io/keminghe/strain-seer:v1.0.0
 ```
+
+For detailed Docker setup and configuration, see our [Docker Design](docs/docker-design.md) documentation, which covers multi-stage builds, dependency management, security considerations, and container lifecycle management.
 
 ### Option 2: Building Docker Image Locally
 
@@ -76,8 +79,6 @@ poetry install
 streamlit run streamlit_app.py
 ```
 
-For detailed Docker setup and configuration, see our [Docker Design](docs/docker-design.md) documentation.
-
 ## 🛠️ Key Features
 
 - **Interactive Point Annotation**: Easily mark fiducial points on your images
@@ -88,10 +89,22 @@ For detailed Docker setup and configuration, see our [Docker Design](docs/docker
 
 ## 📚 Documentation
 
-- [Understanding 2D Strain](docs/understanding-2d-strain.md): Comprehensive guide to strain analysis fundamentals
-- [Docker Design](docs/docker-design.md): Container deployment and configuration
-- [Version Management](docs/version-management.md): Project versioning and release process
-- [Developer Guide](docs/developer-guide.md): Extend and customize Strain Seer's core functionality
+Our documentation is structured to help you understand, use, and extend Strain Seer:
+
+- [Understanding 2D Strain](docs/understanding-2d-strain.md): A comprehensive guide to strain analysis fundamentals with clear labeling conventions, visual examples, and numerical calculation walkthroughs
+- [Docker Design](docs/docker-design.md): Detailed information about container deployment, multi-stage builds, security considerations, and container lifecycle management
+- [Version Management](docs/version-management.md): Guidelines for semantic versioning, version bumping process, conventional commit messages, and best practices for release management
+- [Developer Guide](docs/developer-guide.md): Detailed documentation for extending and customizing Strain Seer's core functionality, including core components, customization guides, and dependency management
+
+The project also includes automated CI/CD workflows in the `.github/workflows` directory:
+
+- **Unit Tests**: Ensures code quality with pytest and coverage reporting
+- **Build Tests**: Validates Docker builds across multiple platforms (AMD64, ARM64)
+- **Docker Publish**: Automatically publishes versioned images to GitHub Container Registry when releases are created
+
+> [!NOTE]
+>
+> The `docs/hammer-challenge` directory contains materials specific to the Make OHI/O 2025 competition and can be safely deleted if you're forking this repository or using it as a template for your own project.
 
 ## 🤝 Contributing
 
@@ -99,9 +112,11 @@ While this is primarily a tool for researchers and developers to customize for t
 
 1. Fork the repository
 2. Create your feature branch
-3. Commit your changes
+3. Commit your changes (following our [version management guidelines](docs/version-management.md))
 4. Push to the branch
 5. Create a Pull Request
+
+All contributions automatically trigger our CI workflows to ensure code quality. For detailed information about the CI/CD pipeline, see the [GitHub Actions workflows documentation](.github/workflows/README.md).
 
 ## 📄 License
 
