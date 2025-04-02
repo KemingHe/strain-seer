@@ -23,59 +23,54 @@ We follow [Semantic Versioning](https://semver.org/) (SemVer) for our version nu
 
 ## 🔄 Version Bump Process
 
-1. **Update Version Number**
+### 👥 For Contributors
 
-   ```bash
-   poetry version <major|minor|patch>
-   ```
+1. **Include Version Bump in Feature Branch**
+   - When creating a feature/fix branch, include version bump if needed
+   - Use appropriate version level based on changes:
 
-   This will automatically update the version in `pyproject.toml`.
-
-2. **Commit Changes**
-   - Use conventional commit messages following the format:
-
-     ```text
-     type(scope): description
+     ```shell
+     poetry version <major|minor|patch>
      ```
 
-   - Types:
-     - `feat`: New features
-     - `fix`: Bug fixes
-     - `docs`: Documentation changes
-     - `style`: Code style changes
-     - `refactor`: Code refactoring
-     - `perf`: Performance improvements
-     - `test`: Adding or modifying tests
-     - `chore`: Maintenance tasks
+   - Commit the version bump with conventional commit message:
 
-   Examples:
+     ```text
+     chore(release): bump version to vX.Y.Z
+     ```
 
-   ```text
-   feat(api): add new endpoint for strain analysis
-   fix(ui): resolve responsive layout issues
-   docs(readme): update installation instructions
-   ```
+2. **Create Pull Request**
+   - Push your branch
+   - Create a pull request for review
+   - Include version bump details in the PR description if applicable
+   - Follow regular PR process
 
-3. **Create Git Tag**
+### 👑 For Repository Owners/Administrators
 
-   ```bash
+1. **Review and Merge**
+   - Review the pull request including version changes
+   - Ensure version bump is appropriate for the changes
+   - Merge the pull request
+
+2. **Create Git Tag**
+
+   ```shell
    git tag -s v$(poetry version --short) -m "v$(poetry version --short) - Summary of changes"
    ```
 
    Example:
 
-   ```bash
+   ```shell
    git tag -s v1.2.0 -m "v1.2.0 - Add new visualization features and performance improvements"
    ```
 
-4. **Push Changes**
+3. **Push Changes and Tags**
 
-   ```bash
-   git push origin main
+   ```shell
    git push origin v$(poetry version --short)
    ```
 
-5. **Create GitHub Release**
+4. **Create GitHub Release**
    - Go to GitHub repository → Releases → Create new release
    - Select the newly created tag
    - Add detailed release notes
@@ -87,52 +82,66 @@ Upon release creation:
 
 - GitHub Actions automatically builds the Docker image
 - Image is published to GitHub Container Registry (ghcr.io)
-- Release notes are generated from conventional commits
 
-## 🔒 Access Control
+## 🔒 Access Control and Responsibilities
 
-> [!WARNING]
->
-> This project uses a simplified version management approach suitable for small teams.
+### 👑 Repository Owner/Administrators
 
-Larger projects might want to consider:
+Repository owners maintain project integrity and security:
 
-- Branch protection rules requiring pull requests
-- Automated version bumping through CI/CD
-- Release branch strategy
-- Automated changelog generation
+- **Version Control**: Create tags and releases to ensure stable release points
+- **Code Quality**: Review and merge PRs to maintain code standards
+- **Security**: Manage access and sensitive configurations
 
-Only repository administrators with bypass permissions can:
+### 👥 Contributors
 
-- Directly push to main branch
-- Create and push tags
-- Create releases
+Contributors follow these guidelines to maintain project quality:
 
-All other team members must:
+- **Branch Workflow**: Create feature branches with your username
 
-1. Create feature branches
-2. Submit pull requests
-3. Get code review approval
-4. Merge through pull request
+  ```text
+  feature/add-new-visualization/KemingHe
+  test/improved-core-coverage/KemingHe
+  fix/memory-leak/KemingHe
+  ```
+
+- **PR Process**: Submit PRs for all changes and address review feedback
+- **Version Control**: Include version bumps in feature PRs when needed
 
 ## 💡 Best Practices
 
-1. **Version Bumping**
-   - Always bump version before creating a release
-   - Use appropriate version level based on changes
-   - Document breaking changes clearly
+1. **Version Management**
+   - Bump versions based on impact: major (breaking), minor (features), patch (fixes)
+   - Document breaking changes to help users migrate smoothly
 
-2. **Commit Messages**
-   - Be descriptive and clear
-   - Reference issue numbers when applicable
-   - Keep commits focused and atomic
+   ```markdown
+   # Breaking Changes in v2.0.0
+   - Removed deprecated API endpoints
+   - New authentication flow required
+   Migration guide: [link]
+   ```
 
-3. **Release Notes**
-   - Include all significant changes
-   - Highlight breaking changes
-   - Provide migration guides if needed
+2. **Code Quality**
+   - Write clear commit messages that explain the "why" not just the "what"
 
-4. **Tag Management**
-   - Always sign tags for security
-   - Use meaningful tag messages
-   - Keep tags in sync with releases
+   ```text
+   # Good
+   feat(auth): implement OAuth2 for better security
+   # Bad
+   feat(auth): add OAuth2
+   ```
+
+   - Keep changes focused and atomic for easier review and rollback
+
+3. **Release Process**
+   - Sign tags for security and traceability
+   - Write meaningful release notes that highlight user-impacting changes
+
+   ```markdown
+   # Release v1.2.0
+   ## Features
+   - New visualization component for strain analysis
+   - Improved performance in data processing
+   ## Breaking Changes
+   - None
+   ```
