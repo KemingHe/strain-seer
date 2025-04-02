@@ -1,7 +1,7 @@
 [project]
 name = "strain_seer"
 version = "1.0.0"
-description = "Strain Seer is a free-open-source tool for analyzing force and 2D strain relationships in metamorphic manufacturing."
+description = "A Streamlit app for 2D strain analysis using fiducial markers, designed for analyzing material deformation from image sequences."
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
