@@ -2,7 +2,9 @@
 
 import numpy as np
 import pandas as pd
+import pytest
 import matplotlib.pyplot as plt
+
 from strain_analysis_data import (
     format_scientific,
     calculate_regression,
@@ -11,6 +13,7 @@ from strain_analysis_data import (
     create_strain_dataframe,
     export_raw_data,
     export_analysis_results,
+    export_data,
 )
 
 
@@ -159,3 +162,10 @@ def test_export_analysis_results():
     assert isinstance(csv_str, str)
     assert "x_axis" in json_str
     assert "x_axis" in csv_str
+
+
+def test_export_data_unsupported_format():
+    """Test export_data with unsupported format."""
+    data = {"test": "data"}
+    with pytest.raises(ValueError, match="Unsupported format"):
+        export_data(data, format="invalid")

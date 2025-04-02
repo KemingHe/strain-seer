@@ -1,6 +1,12 @@
+"""Tests for strain analysis core module."""
+
 import numpy as np
 import pytest
-from strain_analysis_core import normalize_points_by_scale, calculate_strain_tensor
+
+from strain_analysis_core import (
+    normalize_points_by_scale,
+    calculate_strain_tensor,
+)
 
 
 def test_normalize_points_by_scale():
@@ -61,3 +67,13 @@ def test_calculate_strain_tensor():
         calculate_strain_tensor(
             original, deformed, center_index=5
         )  # Invalid center index
+
+    # Test case 6: Low rank warning
+    # Create points that will result in a low rank solution
+    low_rank_original = np.array([[0, 0], [1, 0], [1, 0], [0, 0], [0.5, 0]])
+    low_rank_deformed = low_rank_original.copy()
+    low_rank_deformed[:, 0] *= 1.2  # 20% extension in x-direction
+    
+    # This should not raise an error but should trigger the rank warning
+    strain = calculate_strain_tensor(low_rank_original, low_rank_deformed)
+    assert not np.allclose(strain, np.zeros((2, 2)))  # Should still calculate strain

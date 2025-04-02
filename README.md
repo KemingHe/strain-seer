@@ -96,15 +96,16 @@ streamlit run streamlit_app.py
 Our documentation is structured to help you understand, use, and extend Strain Seer:
 
 - [Understanding 2D Strain](docs/understanding-2d-strain.md): A comprehensive guide to strain analysis fundamentals with clear labeling conventions, visual examples, and numerical calculation walkthroughs
-- [Docker Design](docs/docker-design.md): Detailed information about container deployment, multi-stage builds, security considerations, and container lifecycle management
-- [Version Management](docs/version-management.md): Guidelines for semantic versioning, version bumping process, conventional commit messages, and best practices for release management
 - [Developer Guide](docs/developer-guide.md): Detailed documentation for extending and customizing Strain Seer's core functionality, including core components, customization guides, and dependency management
+- [Testing Strategy](tests/README.md): Our approach to testing, focusing on core strain analysis algorithms and data processing while maintaining a pragmatic balance with UI testing
+- [Version Management](docs/version-management.md): Guidelines for semantic versioning, version bumping process, conventional commit messages, and best practices for release management
+- [Docker Design](docs/docker-design.md): Detailed information about container deployment, multi-stage builds, security considerations, and container lifecycle management
 
 The project also includes automated CI/CD workflows in the `.github/workflows` directory:
 
-- **Unit Tests**: Ensures code quality with pytest and coverage reporting
-- **Build Tests**: Validates Docker builds across multiple platforms (AMD64, ARM64)
-- **Docker Publish**: Automatically publishes versioned images to GitHub Container Registry when releases are created
+- [**Unit Tests**](.github/workflows/unit-test.yaml): Ensures code quality with pytest and coverage reporting
+- [**Build Tests**](.github/workflows/built-test.yaml): Validates Docker builds across multiple platforms (AMD64, ARM64)
+- [**Docker Publish**](.github/workflows/docker-publish.yaml): Automatically publishes versioned images to GitHub Container Registry when releases are created
 
 > [!NOTE]
 >
@@ -119,6 +120,8 @@ While this is primarily a tool for researchers and developers to customize for t
 3. Commit your changes (following our [version management guidelines](docs/version-management.md))
 4. Push to the branch
 5. Create a Pull Request
+
+Please follow our [testing strategy](tests/README.md) to ensure your changes maintain the project's quality standards. We prioritize testing core strain analysis algorithms and data processing functions, while taking a pragmatic approach to UI testing.
 
 All contributions automatically trigger our CI workflows to ensure code quality. For detailed information about the CI/CD pipeline, see the [GitHub Actions workflows documentation](.github/workflows/README.md).
 
