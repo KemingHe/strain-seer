@@ -1,8 +1,12 @@
-# [Strain Seer](https://github.com/KemingHe/strain-seer) 📊
+# [👁️ Strain Seer](https://github.com/KemingHe/strain-seer)
 
-A Streamlit-based web application for 2D strain analysis using fiducial markers, designed for researchers and developers analyzing material deformation from image sequences.
+<div align="center">
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Strain Seer is a Streamlit-based web application for 2D strain analysis using fiducial markers, designed for researchers and developers analyzing material deformation from image sequences](https://socialify.git.ci/KemingHe/strain-seer/image?description=1&language=1&logo=https%3A%2F%2Fraw.githubusercontent.com%2FKemingHe%2Fstrain-seer%2Fmain%2Fdocs%2Fstrain-seer-icon.png&name=1&owner=1&theme=Dark)](https://github.com/KemingHe/strain-seer)
+
+[![Build Status](https://img.shields.io/github/actions/workflow/status/KemingHe/strain-seer/build-test.yaml)](https://github.com/KemingHe/strain-seer/actions/workflows/build-test.yaml) &nbsp; [![Codcov Status](https://codecov.io/gh/KemingHe/strain-seer/graph/badge.svg?token=BCJ4AJUW1I)](https://codecov.io/gh/KemingHe/strain-seer) &nbsp; [![GitHub License](https://img.shields.io/github/license/KemingHe/strain-seer)](https://github.com/KemingHe/strain-seer/blob/main/LICENSE) &nbsp; [![GitHub Release](https://img.shields.io/github/v/release/KemingHe/strain-seer)](https://github.com/KemingHe/strain-seer/releases)
+
+</div>
 
 ## 🚀 Try It Now
 
