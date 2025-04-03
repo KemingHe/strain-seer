@@ -1,6 +1,6 @@
 [project]
 name = "strain_seer"
-version = "1.0.3"
+version = "1.0.4"
 description = "A Streamlit app for 2D strain analysis using fiducial markers, designed for analyzing material deformation from image sequences."
 license = { file = "LICENSE" }
 readme = "README.md"
