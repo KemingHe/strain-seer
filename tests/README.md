@@ -42,7 +42,7 @@ Tests data processing and visualization in `strain_analysis_data.py`:
 ```shell
 pytest  # Run all tests
 
-pytest --cov tests/  # Run with coverage
+pytest --cov  # Run with coverage
 ```
 
 ## 📝 Best Practices
