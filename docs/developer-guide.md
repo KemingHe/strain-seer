@@ -203,7 +203,7 @@ When adding new features or customizations, make sure to:
 pytest
 
 # Run with coverage
-pytest --cov=strain_seer
+pytest --cov
 ```
 
 ## 📦 Dependencies
