@@ -1,4 +1,8 @@
-# Metamorphic Manufacturing Instructions for Connecting Rod Model
+# Metamorphic Manufacturing Instructions for Connecting Rod Mini Model
+
+> [!NOTE]
+>
+> Original instructions by Jalen Manu at The Ohio State University. Revised by Keming He for Hammer Challenge submission.
 
 (College Hackathon Edition - Using Plasticine)
 
@@ -37,3 +41,9 @@ Begin with a 43 mm × 43 mm × 43 mm cube of plasticine. Choose any corner as yo
 16. Pinch the sides of the larger circular end (the 50 mm one) to create small hammer-like extrusions where mounting screws would go on a real connecting rod.
 
 17. Verify all dimensions match the specifications before finalizing your model.
+
+## Copyright
+
+Copyright © 2024 Jalen Manu and Keming He. All rights reserved.
+
+This document and its contents are protected by copyright law. No part of this document may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the copyright holders.
