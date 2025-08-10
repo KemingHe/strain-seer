@@ -1,4 +1,11 @@
-# [👁️ Strain Seer](https://github.com/KemingHe/strain-seer)
+# ⚠️ [Archived] ⚠️ [👁️ Strain Seer](https://github.com/KemingHe/strain-seer)
+
+> [!WARNING]
+> **This repository is archived and no longer maintained.**
+>
+> - **Archived**: 2025-08-09 by [@KemingHe](https://github.com/KemingHe)
+> - **Archive reason**: Ohio State [HAMMER Lab](https://hammer.osu.edu/) no longer in need of this application
+> - **Inquries and corrections**: email [keminghe.career@gmail.com](mailto:keminghe.career@gmail.com)
 
 <div align="center">
 
